@@ -1,0 +1,26 @@
+{
+    "name": "paisa-routing",
+    "description": "AI payment method recommender — analyzes user financial data via RBI Account Aggregator framework and recommends optimal payment instrument",
+    "version": "1.0.0",
+    "capabilities": [
+        "payment_routing",
+        "balance_check",
+        "savings_optimization",
+        "cashback_calculation"
+    ],
+    "endpoints": {
+        "health": "/health",
+        "invoke": "/api/v1/recommend-payment"
+    },
+    "metadata": {
+        "framework": "google-adk",
+        "model": "gemini-2.0-flash",
+        "deployment": "cloud-run",
+        "tools": [
+            "get_payment_recommendation",
+            "check_account_balance"
+        ]
+    },
+    "author": "PAISA AI Systems",
+    "license": "MIT"
+}

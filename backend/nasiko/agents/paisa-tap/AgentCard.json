@@ -1,0 +1,27 @@
+{
+    "name": "paisa-tap",
+    "description": "Trusted Agent Protocol server — enforces user's financial constitution when external AI agents (Claude, Gemini, GPT-4) request to spend money",
+    "version": "1.0.0",
+    "capabilities": [
+        "spending_control",
+        "rule_enforcement",
+        "audit_trail",
+        "mcp_compatible"
+    ],
+    "endpoints": {
+        "health": "/health",
+        "invoke": "/api/v1/tap/request"
+    },
+    "metadata": {
+        "framework": "google-adk",
+        "model": "gemini-2.0-flash",
+        "deployment": "cloud-run",
+        "tools": [
+            "evaluate_spending_request",
+            "get_financial_constitution",
+            "get_agent_audit_trail"
+        ]
+    },
+    "author": "PAISA AI Systems",
+    "license": "MIT"
+}
