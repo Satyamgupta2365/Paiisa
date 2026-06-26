@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+const API_BASE = process.env.REACT_APP_API_URL || (
+  window.location.hostname === 'localhost'
+    ? 'http://localhost:8000/api/v1'
+    : '/_/backend/api/v1'
+);
+
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1',
+  baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -41,7 +47,7 @@ export const analyzeSalaryAffordability = (salaryText, destination = 'Tokyo, Jap
 /** Salary affordability — file upload version */
 export const analyzeSalaryFile = (formData) =>
   axios.post(
-    (process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1') + '/travel/affordability/upload',
+    API_BASE + '/travel/affordability/upload',
     formData,
     { headers: { 'Content-Type': 'multipart/form-data' } }
   );
@@ -83,7 +89,7 @@ export const analyzeStatement = (statementText, companyName = 'My Business') =>
 /** Upload bank statement file */
 export const analyzeStatementFile = (formData) =>
   axios.post(
-    (process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1') + '/merchant/analyze-statement/upload',
+    API_BASE + '/merchant/analyze-statement/upload',
     formData,
     { headers: { 'Content-Type': 'multipart/form-data' } }
   );
