@@ -1,227 +1,261 @@
+"""
+PAISA ITR Service — Tax Aggregation & Computation Engine
+Aggregates data from: Transactions, StatementHistory, AgentDecisionLogs
+Computes: Old Regime / New Regime / Sec 44AD Presumptive Tax
+"""
 import json
-from sqlalchemy import select
-from database.models import Transaction, StatementHistory, AgentDecisionLog
+from sqlalchemy import select, func
+from database.models import Transaction, StatementHistory, AgentDecisionLog, TransactionStatus, AgentDecision
 from datetime import datetime
 
+
 class ItrService:
+
+    # ── Tax Slab Calculators ──────────────────────────────────────────────────
+
     def calculate_new_regime_tax(self, taxable_income: float) -> float:
         """
-        Calculate income tax under the New Tax Regime (FY 2025-26 / 2026-27)
-        Slabs:
-          - Up to ₹4,00,000: Nil
-          - ₹4,00,001 to ₹8,00,000: 5%
-          - ₹8,00,001 to ₹12,00,000: 10%
-          - ₹12,00,001 to ₹16,00,000: 15%
-          - ₹16,00,001 to ₹20,00,000: 20%
-          - Above ₹20,00,000: 30%
-        Rebate: S.87A provides 100% tax rebate if taxable income <= ₹12,00,000.
+        FY 2025-26 / AY 2026-27 New Tax Regime slabs:
+          0 – 4,00,000      → 0%
+          4,00,001 – 8,00,000 → 5%
+          8,00,001 – 12,00,000 → 10%
+          12,00,001 – 16,00,000 → 15%
+          16,00,001 – 20,00,000 → 20%
+          > 20,00,000       → 30%
+        Sec 87A: Full rebate if taxable income ≤ ₹12,00,000
         """
         if taxable_income <= 0:
             return 0.0
-        
-        # Calculate raw tax based on slabs
+        if taxable_income <= 400_000:
+            return 0.0
+
         tax = 0.0
-        
-        # Slab 1: Up to 4L
-        if taxable_income <= 400000:
+        if taxable_income > 400_000:
+            tax += min(taxable_income - 400_000, 400_000) * 0.05
+        if taxable_income > 800_000:
+            tax += min(taxable_income - 800_000, 400_000) * 0.10
+        if taxable_income > 1_200_000:
+            tax += min(taxable_income - 1_200_000, 400_000) * 0.15
+        if taxable_income > 1_600_000:
+            tax += min(taxable_income - 1_600_000, 400_000) * 0.20
+        if taxable_income > 2_000_000:
+            tax += (taxable_income - 2_000_000) * 0.30
+
+        # Sec 87A full rebate for income ≤ ₹12 Lakh
+        if taxable_income <= 1_200_000:
             return 0.0
-        
-        # Slab 2: 4L to 8L (5%)
-        if taxable_income > 400000:
-            tax += min(taxable_income - 400000, 400000) * 0.05
-            
-        # Slab 3: 8L to 12L (10%)
-        if taxable_income > 800000:
-            tax += min(taxable_income - 800000, 400000) * 0.10
-            
-        # Slab 4: 12L to 16L (15%)
-        if taxable_income > 1200000:
-            tax += min(taxable_income - 1200000, 400000) * 0.15
-            
-        # Slab 5: 16L to 20L (20%)
-        if taxable_income > 1600000:
-            tax += min(taxable_income - 1600000, 400000) * 0.20
-            
-        # Slab 6: Above 20L (30%)
-        if taxable_income > 2000000:
-            tax += (taxable_income - 2000000) * 0.30
-            
-        # Rebate under Section 87A (effective up to ₹12,00,000 taxable income)
-        if taxable_income <= 1200000:
-            return 0.0
-            
+
         return round(tax, 2)
 
     def calculate_old_regime_tax(self, taxable_income: float) -> float:
         """
-        Calculate income tax under the Old Tax Regime
-        Slabs:
-          - Up to ₹2,50,000: Nil
-          - ₹2,50,001 to ₹5,00,000: 5%
-          - ₹5,00,001 to ₹10,00,000: 20%
-          - Above ₹10,00,000: 30%
-        Rebate: S.87A provides 100% tax rebate if taxable income <= ₹5,00,000.
+        Old Tax Regime slabs:
+          0 – 2,50,000    → 0%
+          2,50,001 – 5,00,000 → 5%
+          5,00,001 – 10,00,000 → 20%
+          > 10,00,000     → 30%
+        Sec 87A: Full rebate if taxable income ≤ ₹5,00,000
         """
         if taxable_income <= 0:
             return 0.0
-            
+        if taxable_income <= 250_000:
+            return 0.0
+
         tax = 0.0
-        
-        # Slab 1: Up to 2.5L
-        if taxable_income <= 250000:
+        if taxable_income > 250_000:
+            tax += min(taxable_income - 250_000, 250_000) * 0.05
+        if taxable_income > 500_000:
+            tax += min(taxable_income - 500_000, 500_000) * 0.20
+        if taxable_income > 1_000_000:
+            tax += (taxable_income - 1_000_000) * 0.30
+
+        # Sec 87A rebate
+        if taxable_income <= 500_000:
             return 0.0
-            
-        # Slab 2: 2.5L to 5L (5%)
-        if taxable_income > 250000:
-            tax += min(taxable_income - 250000, 250000) * 0.05
-            
-        # Slab 3: 5L to 10L (20%)
-        if taxable_income > 500000:
-            tax += min(taxable_income - 500000, 500000) * 0.20
-            
-        # Slab 4: Above 10L (30%)
-        if taxable_income > 1000000:
-            tax += (taxable_income - 1000000) * 0.30
-            
-        # Rebate under Section 87A (effective up to ₹5,00,000 taxable income)
-        if taxable_income <= 500000:
-            return 0.0
-            
+
         return round(tax, 2)
+
+    # ── Comparative Tax Calculator ────────────────────────────────────────────
 
     def calculate_itr(
         self,
         gross_revenue: float,
         business_expenses: float,
         other_income: float = 0.0,
-        deductions_80c: float = 150000.0,
-        deductions_80d: float = 25000.0,
+        deductions_80c: float = 150_000.0,
+        deductions_80d: float = 25_000.0,
         apply_presumptive_44ad: bool = False
     ) -> dict:
         """
-        Performs comparative tax calculation under Old & New regimes,
-        including normal accounting vs Presumptive S.44AD (6% digital profit).
+        Comparative ITR computation: Old Regime vs New Regime
+        Also calculates Sec 44AD presumptive tax (6% of digital turnover).
         """
-        # 1. Net Profit under Normal Accounting
+        # 1. Net profit under normal books (Sec 28)
         normal_profit = max(0.0, gross_revenue - business_expenses)
-        
-        # 2. Net Profit under Presumptive Section 44AD (6% of gross digital turnover)
+
+        # 2. Presumptive profit under Sec 44AD (6% digital turnover)
         presumptive_profit = gross_revenue * 0.06 if apply_presumptive_44ad else normal_profit
-        
         declared_business_income = presumptive_profit if apply_presumptive_44ad else normal_profit
-        
-        # Total Income before deductions
+
+        # 3. Gross Total Income
         gti = declared_business_income + other_income
-        
-        # --- NEW REGIME CALCULATION ---
-        # Deductions are generally NOT allowed in New Regime, except Standard Deduction (if salaried, which is ₹75k)
-        new_regime_deductions = 0.0
+
+        # ── NEW REGIME ───────────────────────────────────────────────────────
+        new_regime_deductions = 0.0  # Chapter VI-A deductions disallowed
         new_taxable_income = max(0.0, gti - new_regime_deductions)
         new_raw_tax = self.calculate_new_regime_tax(new_taxable_income)
         new_cess = round(new_raw_tax * 0.04, 2)
-        new_total_tax = new_raw_tax + new_cess
-        
-        # --- OLD REGIME CALCULATION ---
-        # Deductions are allowed in Old Regime (80C, 80D, etc.)
-        old_regime_deductions = min(deductions_80c, 150000.0) + min(deductions_80d, 25000.0)
+        new_total_tax = round(new_raw_tax + new_cess, 2)
+
+        # ── OLD REGIME ───────────────────────────────────────────────────────
+        old_regime_deductions = min(deductions_80c, 150_000.0) + min(deductions_80d, 25_000.0)
         old_taxable_income = max(0.0, gti - old_regime_deductions)
         old_raw_tax = self.calculate_old_regime_tax(old_taxable_income)
         old_cess = round(old_raw_tax * 0.04, 2)
-        old_total_tax = old_raw_tax + old_cess
-        
-        # Recommend the lower tax option
+        old_total_tax = round(old_raw_tax + old_cess, 2)
+
+        # ── RECOMMENDATION ───────────────────────────────────────────────────
         optimal_regime = "New" if new_total_tax <= old_total_tax else "Old"
-        tax_saved = abs(old_total_tax - new_total_tax)
-        
+        tax_saved = round(abs(old_total_tax - new_total_tax), 2)
+        best_tax = new_total_tax if optimal_regime == "New" else old_total_tax
+
+        if apply_presumptive_44ad:
+            sec44_note = (
+                "Section 44AD presumptive taxation at 6% digital rate is applied. "
+                "You declare ₹{:,.0f} as net taxable income — no audit books required.".format(presumptive_profit)
+            )
+        else:
+            sec44_note = "Normal accounting (Sec 28) is applied. Full audited books must be maintained."
+
         return {
-            "business_income_type": "Presumptive (Sec 44AD)" if apply_presumptive_44ad else "Normal Accounting (Sec 28)",
+            "business_income_type": "Presumptive (Sec 44AD — 6% Digital)" if apply_presumptive_44ad else "Normal Accounting (Sec 28)",
+            "gross_revenue": round(gross_revenue, 2),
+            "business_expenses": round(business_expenses, 2),
             "normal_profit": round(normal_profit, 2),
+            "presumptive_profit_44ad": round(presumptive_profit, 2),
             "declared_business_income": round(declared_business_income, 2),
             "other_income": round(other_income, 2),
             "gross_total_income": round(gti, 2),
             "new_regime": {
+                "label": "New Tax Regime (FY 2025-26)",
+                "deductions_applied": 0.0,
                 "taxable_income": round(new_taxable_income, 2),
                 "raw_tax": round(new_raw_tax, 2),
                 "cess": round(new_cess, 2),
                 "total_tax": round(new_total_tax, 2),
+                "is_optimal": optimal_regime == "New",
             },
             "old_regime": {
+                "label": "Old Tax Regime (with deductions)",
                 "deductions_applied": round(old_regime_deductions, 2),
                 "taxable_income": round(old_taxable_income, 2),
                 "raw_tax": round(old_raw_tax, 2),
                 "cess": round(old_cess, 2),
                 "total_tax": round(old_total_tax, 2),
+                "is_optimal": optimal_regime == "Old",
             },
             "recommendation": {
                 "optimal_regime": optimal_regime,
-                "tax_liability": round(new_total_tax if optimal_regime == "New" else old_total_tax, 2),
+                "tax_liability": round(best_tax, 2),
                 "tax_saved": round(tax_saved, 2),
+                "effective_tax_rate": round((best_tax / gti * 100) if gti > 0 else 0.0, 2),
+                "sec44ad_note": sec44_note,
                 "guidance": (
-                    f"Choose the {optimal_regime.upper()} TAX REGIME. It saves you ₹{tax_saved:,.2f} in tax. "
-                    + ("By utilizing Section 44AD presumptive taxation at 6% for digital payments, you also do not need to maintain detailed balance sheets or audits." if apply_presumptive_44ad else "Normal audit filing is recommended.")
-                )
-            }
+                    f"Choose the {optimal_regime.upper()} TAX REGIME. "
+                    f"You save ₹{tax_saved:,.2f} vs the alternative regime. "
+                    + sec44_note
+                ),
+            },
         }
+
+    # ── Data Aggregator ───────────────────────────────────────────────────────
 
     async def aggregate_tax_data(self, user_id: str, db) -> dict:
         """
-        Queries other parts of the system to gather tax-related numbers:
-        1. Queries statement history for latest uploads (income/expenses).
-        2. Queries transactions for Pine Labs POS volumes.
-        3. Queries TAP logs for agent spending to deduct as tech/operating expenses.
+        Pull live data from the PAISA platform for ITR aggregation:
+        1. StatementHistory — latest bank statement (credits/debits)
+        2. Transactions — user's Pine Labs digital transaction volume
+        3. AgentDecisionLog — approved AI agent spending (tech expense deductions)
         """
-        # Default mock values in case database is empty
-        gross_revenue = 64426.54  # Default Credits from satyam statement
-        business_expenses = 58391.35  # Default Debits from satyam statement
+        # ── Sensible defaults (Satyam demo data) ────────────────────────────
+        gross_revenue = 64_426.54
+        business_expenses = 58_391.35
         agent_expenses = 0.0
-        
-        # 1. Read latest statement analysis
+        data_source = "demo_defaults"
+        statement_company = "Demo Business"
+        statement_period = "FY 2025-26"
+        transaction_count = 0
+        tap_log_count = 0
+
+        # ── 1. Latest bank statement analysis ───────────────────────────────
         try:
-            stmt_result = await db.execute(
-                select(StatementHistory).order_by(StatementHistory.created_at.desc()).limit(1)
+            stmt_q = await db.execute(
+                select(StatementHistory)
+                .order_by(StatementHistory.created_at.desc())
+                .limit(1)
             )
-            stmt = stmt_result.scalar_one_or_none()
+            stmt = stmt_q.scalar_one_or_none()
             if stmt:
-                analysis = json.loads(stmt.analysis_json)
+                analysis = json.loads(stmt.analysis_json or "{}")
                 summary = analysis.get("summary", {})
-                gross_revenue = summary.get("total_credits", gross_revenue)
-                business_expenses = summary.get("total_debits", business_expenses)
+                if summary.get("total_credits", 0) > 0:
+                    gross_revenue = float(summary.get("total_credits", gross_revenue))
+                    business_expenses = float(summary.get("total_debits", business_expenses))
+                    data_source = "statement_history"
+                    statement_company = stmt.company_name
         except Exception as e:
-            print(f"Error querying statement history for ITR: {e}")
+            print(f"[ITR] Statement query warning: {e}")
 
-        # 2. Read success transactions (add to digital revenue)
+        # ── 2. User digital transaction volume ──────────────────────────────
         try:
-            tx_result = await db.execute(
-                select(Transaction).where(Transaction.status == "success")
+            tx_q = await db.execute(
+                select(func.sum(Transaction.amount), func.count(Transaction.id))
+                .where(Transaction.status == TransactionStatus.SUCCESS)
             )
-            txs = tx_result.scalars().all()
-            if txs:
-                # Add digital payments to gross revenue
-                tx_sum = sum(t.amount for t in txs)
-                # If transactions exist, we use them to build/augment gross revenue
-                gross_revenue = max(gross_revenue, tx_sum)
+            tx_row = tx_q.one_or_none()
+            if tx_row and tx_row[0]:
+                tx_total = float(tx_row[0])
+                transaction_count = int(tx_row[1] or 0)
+                # Pine Labs digital turnover supplements/overrides bank data
+                if tx_total > 0:
+                    gross_revenue = max(gross_revenue, tx_total)
+                    if data_source == "demo_defaults":
+                        data_source = "pine_labs_transactions"
         except Exception as e:
-            print(f"Error querying transactions for ITR: {e}")
+            print(f"[ITR] Transaction query warning: {e}")
 
-        # 3. Read TAP logs (approved expenditures by AI agents)
+        # ── 3. TAP approved AI agent expenditures ───────────────────────────
         try:
-            tap_result = await db.execute(
-                select(AgentDecisionLog).where(AgentDecisionLog.decision == "APPROVED")
+            tap_q = await db.execute(
+                select(func.sum(AgentDecisionLog.requested_amount), func.count(AgentDecisionLog.id))
+                .where(AgentDecisionLog.decision == AgentDecision.APPROVED)
             )
-            logs = tap_result.scalars().all()
-            agent_expenses = sum(log.requested_amount for log in logs)
+            tap_row = tap_q.one_or_none()
+            if tap_row and tap_row[0]:
+                agent_expenses = float(tap_row[0])
+                tap_log_count = int(tap_row[1] or 0)
         except Exception as e:
-            print(f"Error querying TAP logs for ITR: {e}")
+            print(f"[ITR] TAP logs query warning: {e}")
 
-        # Agent expenditures are tax-deductible software/service expenses
         total_expenses = business_expenses + agent_expenses
+        net_profit = max(0.0, gross_revenue - total_expenses)
+        profit_margin = round((net_profit / gross_revenue * 100) if gross_revenue > 0 else 0.0, 2)
 
         return {
             "gross_revenue": round(gross_revenue, 2),
             "operating_expenses": round(business_expenses, 2),
             "ai_agent_expenses": round(agent_expenses, 2),
             "total_expenses": round(total_expenses, 2),
-            "digital_turnover_pct": 100.0  # our platform tracks digital transactions
+            "net_profit": round(net_profit, 2),
+            "profit_margin_pct": profit_margin,
+            "digital_turnover_pct": 100.0,
+            "transaction_count": transaction_count,
+            "tap_log_count": tap_log_count,
+            "data_source": data_source,
+            "statement_company": statement_company,
+            "assessment_year": "2026-27",
+            "financial_year": "2025-26",
         }
+
 
 itr_service = ItrService()

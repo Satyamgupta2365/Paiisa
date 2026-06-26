@@ -1,13 +1,7 @@
 """
-Gemini AI Service — Primary AI layer for PAISA (Track B: Enterprise Agent Engineering)
-Uses Google's Gemini models via the google-genai SDK.
-Falls back to legacy Bedrock/Groq if Gemini API key is not configured.
-
-Supports:
-  - Payment routing recommendations
-  - Bank statement analysis
-  - Travel affordability analysis
-  - General-purpose financial AI queries
+Groq AI Service — Primary AI layer for PAISA (replaces Gemini with Groq as requested)
+Uses Groq's llama-3.3-70b-versatile model.
+Falls back to rich static responses or smart rules if the API key is not configured or invalid.
 """
 import json
 from config.settings import settings
@@ -16,7 +10,7 @@ from models.schemas import RecommendResponse
 
 
 class GeminiService:
-    """Unified Gemini-powered AI service replacing Bedrock + Groq."""
+    """Unified Groq-powered AI service replacing Gemini/Bedrock."""
 
     def __init__(self):
         self._client = None
@@ -24,17 +18,18 @@ class GeminiService:
         self._init_client()
 
     def _init_client(self):
-        """Initialize the google-genai client if API key is available."""
-        if not settings.GOOGLE_API_KEY or settings.GOOGLE_API_KEY.startswith("your-"):
-            print("[GeminiService] No GOOGLE_API_KEY set — will use fallback mode")
+        """Initialize the Groq client if API key is available."""
+        key = settings.GROQ_API_KEY
+        if not key or key.startswith("your-"):
+            print("[GroqService] No GROQ_API_KEY set — running in mock/fallback mode")
             return
         try:
-            from google import genai
-            self._client = genai.Client(api_key=settings.GOOGLE_API_KEY)
+            from groq import Groq
+            self._client = Groq(api_key=key)
             self._available = True
-            print(f"[GeminiService] Initialized with model={settings.GEMINI_MODEL}")
+            print(f"[GroqService] Initialized with model=llama-3.3-70b-versatile")
         except Exception as e:
-            print(f"[GeminiService] Init failed: {e} — will use fallback mode")
+            print(f"[GroqService] Init failed: {e} — running in mock/fallback mode")
 
     @property
     def is_available(self) -> bool:
@@ -42,34 +37,38 @@ class GeminiService:
 
     async def generate(self, prompt: str, system_instruction: str = None, max_tokens: int = 2048) -> str:
         """
-        Core generation method using Gemini.
+        Core generation method using Groq.
         Returns raw text response from the model.
-        Falls back to empty string if not available.
+        Raises exception if not configured or failed.
         """
         if not self.is_available:
-            return ""
+            raise RuntimeError("Groq API not configured or unavailable")
 
         try:
-            from google.genai import types
-            config = types.GenerateContentConfig(
-                max_output_tokens=max_tokens,
-                temperature=0.2,
-            )
+            messages = []
             if system_instruction:
-                config.system_instruction = system_instruction
+                messages.append({"role": "system", "content": system_instruction})
+            messages.append({"role": "user", "content": prompt})
 
-            response = self._client.models.generate_content(
-                model=settings.GEMINI_MODEL,
-                contents=prompt,
-                config=config,
+            # Run in a blocking thread context if necessary, but since uvicorn is async
+            # we can run it synchronously here. To avoid blocking the loop, we could do anyio.to_thread,
+            # but simple direct call works well for typical loads.
+            resp = self._client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                temperature=0.2,
+                max_tokens=max_tokens,
             )
-            return response.text or ""
+            val = resp.choices[0].message.content
+            if not val:
+                raise RuntimeError("Groq returned empty response")
+            return val
         except Exception as e:
-            print(f"[GeminiService] Generation error: {e}")
-            return ""
+            print(f"[GroqService] Generation error: {e}")
+            raise e
 
     async def generate_json(self, prompt: str, system_instruction: str = None) -> dict:
-        """Generate and parse a JSON response from Gemini."""
+        """Generate and parse a JSON response from Groq."""
         raw = await self.generate(prompt, system_instruction)
         if not raw:
             return {}
@@ -84,10 +83,10 @@ class GeminiService:
         except (json.JSONDecodeError, ValueError):
             return {}
 
-    # ── Payment Routing (replaces bedrock_service.recommend) ───────────────────
+    # ── Payment Routing ────────────────────────────────────────────────────────
 
     async def recommend(self, amount, category, options) -> RecommendResponse:
-        """AI-powered payment routing recommendation using Gemini."""
+        """AI-powered payment routing recommendation using Groq."""
         system_instruction = """You are PAISA, an expert Indian payment routing AI.
 Analyze the transaction and payment options, then recommend the optimal payment method.
 Return ONLY valid JSON with 'recommended_payment' and 'reasoning'. No markdown."""
@@ -101,7 +100,10 @@ Payment options and savings:
 
 Return ONLY a JSON object with 'recommended_payment' (exact method name) and 'reasoning'."""
 
-        data = await self.generate_json(prompt, system_instruction)
+        try:
+            data = await self.generate_json(prompt, system_instruction)
+        except Exception:
+            data = {}
 
         if data and data.get("recommended_payment"):
             rec_method_str = data["recommended_payment"]
@@ -123,7 +125,7 @@ Return ONLY a JSON object with 'recommended_payment' (exact method name) and 're
                     estimated_savings=cashback_amount,
                     cashback_amount=cashback_amount,
                     all_options=options,
-                    reasoning=data.get("reasoning", "Gemini AI: Selected optimally.")
+                    reasoning=data.get("reasoning", "Groq AI: Selected optimally.")
                 )
 
         # Fallback: pick highest savings
@@ -136,10 +138,10 @@ Return ONLY a JSON object with 'recommended_payment' (exact method name) and 're
             reasoning="Fallback: selected highest savings option."
         )
 
-    # ── Bank Statement Analysis (replaces groq_merchant_analysis) ─────────────
+    # ── Bank Statement Analysis ────────────────────────────────────────────────
 
     async def analyze_bank_statement(self, statement_text: str, company_name: str = "My Business") -> dict:
-        """Full Gemini AI analysis of a merchant bank statement."""
+        """Full Groq AI analysis of a merchant bank statement."""
         system_instruction = """You are PAISA, an expert Indian merchant financial analyst AI.
 You analyze bank statements for MSMEs and logistics companies.
 You MUST respond with ONLY valid JSON — absolutely no markdown, no text outside JSON.
@@ -173,7 +175,11 @@ Bank Statement Data:
 
 Analyze the above bank statement and return complete structured JSON as specified."""
 
-        result = await self.generate_json(prompt, system_instruction)
+        try:
+            result = await self.generate_json(prompt, system_instruction)
+        except Exception:
+            result = {}
+
         if result and isinstance(result, dict) and "summary" in result:
             result["company_name"] = result.get("company_name", company_name)
             return result
@@ -182,10 +188,10 @@ Analyze the above bank statement and return complete structured JSON as specifie
         from services.groq_merchant_analysis import _mock_analysis
         return _mock_analysis(company_name)
 
-    # ── Travel Tips (replaces groq_travel_service tips) ────────────────────────
+    # ── Travel Tips ────────────────────────────────────────────────────────────
 
     async def get_travel_tips(self, destination: str, issues: list) -> list:
-        """Generate personalized travel financial tips using Gemini."""
+        """Generate personalized travel financial tips using Groq."""
         issue_text = "\n".join([
             f"- {i.get('label', '')}: {i.get('current_value', '')}"
             for i in issues if i.get("status") == "ISSUE"
@@ -196,9 +202,9 @@ Analyze the above bank statement and return complete structured JSON as specifie
         system_instruction = "You are PAISA. Generate 3 concise, actionable financial tips for an Indian traveller. Reply with ONLY a JSON array of 3 strings. No markdown."
         prompt = f"Destination: {destination}\nIssues found:\n{issue_text}\n\nGive 3 personalized pre-departure financial tips."
 
-        raw = await self.generate(prompt, system_instruction)
-        if raw:
-            try:
+        try:
+            raw = await self.generate(prompt, system_instruction)
+            if raw:
                 clean = raw.strip()
                 for fence in ["```json", "```JSON", "```"]:
                     if clean.startswith(fence):
@@ -207,8 +213,8 @@ Analyze the above bank statement and return complete structured JSON as specifie
                 tips = json.loads(clean)
                 if isinstance(tips, list):
                     return tips
-            except Exception:
-                pass
+        except Exception:
+            pass
 
         return [
             f"Enable international transactions on your primary card before departing for {destination}.",
@@ -216,10 +222,10 @@ Analyze the above bank statement and return complete structured JSON as specifie
             "Set up PAISA emergency virtual card — activates in under 60 seconds if your card fails."
         ]
 
-    # ── Salary Affordability (replaces groq_travel_service affordability) ──────
+    # ── Salary Affordability ───────────────────────────────────────────────────
 
     async def analyze_salary_affordability(self, salary_text: str, destination: str, trip_cost: float) -> dict:
-        """Gemini-powered salary affordability analysis."""
+        """Groq-powered salary affordability analysis."""
         system_instruction = """You are PAISA, an expert Indian personal finance AI.
 Analyze the salary slip data and give a structured affordability assessment.
 You MUST respond with ONLY valid JSON — no markdown, no explanation outside JSON.
@@ -251,17 +257,21 @@ Trip details:
 
 Analyze affordability and suggest a realistic savings + EMI plan."""
 
-        result = await self.generate_json(prompt, system_instruction)
+        try:
+            result = await self.generate_json(prompt, system_instruction)
+        except Exception:
+            result = {}
+
         if result and "net_salary" in result:
             return result
 
         from services.groq_travel_service import _mock_affordability
         return _mock_affordability(destination, trip_cost)
 
-    # ── Trip Budget (replaces groq_travel_service budget) ─────────────────────
+    # ── Trip Budget ────────────────────────────────────────────────────────────
 
     async def plan_trip_budget(self, destination: str, duration_days: int, trip_budget: float) -> dict:
-        """Gemini-powered trip budget planning."""
+        """Groq-powered trip budget planning."""
         system_instruction = """You are PAISA, expert Indian travel financial planner.
 Generate a realistic itemized trip budget for an Indian traveller.
 Respond with ONLY valid JSON — no markdown.
@@ -282,7 +292,11 @@ Required format:
 - Total budget available: ₹{trip_budget:,.0f}
 - Traveller profile: Indian, middle-income"""
 
-        result = await self.generate_json(prompt, system_instruction)
+        try:
+            result = await self.generate_json(prompt, system_instruction)
+        except Exception:
+            result = {}
+
         if result and "breakdown" in result:
             return result
 
@@ -292,16 +306,16 @@ Required format:
     # ── Health Check ──────────────────────────────────────────────────────────
 
     async def test_connection(self) -> dict:
-        """Quick connectivity test for Gemini."""
+        """Quick connectivity test for Groq."""
         if not self.is_available:
-            return {"status": "not_configured", "detail": "GOOGLE_API_KEY not set"}
+            return {"status": "not_configured", "detail": "GROQ_API_KEY not set"}
         try:
-            text = await self.generate("Say PAISA_GEMINI_OK in exactly those words.")
+            text = await self.generate("Say PAISA_GROQ_OK in exactly those words.")
             return {
                 "status": "connected",
                 "response": text,
-                "model": settings.GEMINI_MODEL,
-                "provider": "Google Gemini"
+                "model": "llama-3.3-70b-versatile",
+                "provider": "Groq AI"
             }
         except Exception as e:
             return {"status": "error", "detail": str(e)}
