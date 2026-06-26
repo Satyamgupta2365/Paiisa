@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#FFFFFF" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+      // Aggressive suppression of Chrome Extension injected errors overriding CRA overlay
+      const _originAddEventListener = window.addEventListener;
+      window.addEventListener = function(type, listener, options) {
+        if (type === 'error' || type === 'unhandledrejection') {
+          const wrappedListener = function(event) {
+            const isExtensionError = 
+              (event.filename && event.filename.includes('chrome-extension://')) ||
+              (event.message && event.message.includes('Origin not allowed')) ||
+              (event.reason && event.reason.message && event.reason.message.includes('Origin not allowed')) ||
+              (event.error && event.error.stack && event.error.stack.includes('cadiboklkpojfamcoggejbbdjcoiljjk'));
+            
+            if (isExtensionError) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              return false;
+            }
+            return listener.call(this, event);
+          };
+          return _originAddEventListener.call(this, type, wrappedListener, options);
+        }
+        return _originAddEventListener.call(this, type, listener, options);
+      };
+
+      window.onerror = function(message, source, lineno, colno, error) {
+        if (source && source.includes('chrome-extension://')) return true;
+        if (message && message.includes('Origin not allowed')) return true;
+        if (error && error.stack && error.stack.includes('cadiboklkpojfamcoggejbbdjcoiljjk')) return true;
+      };
+    </script>
+    <title>PAII</title>
+    <style>
+      body {
+        margin: 0;
+        background-color: #FFFFFF;
+        font-family: 'Inter', sans-serif;
+        color: #000000;
+        overflow-x: hidden;
+      }
+      .swiss-noise {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0.03;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      }
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+  </head>
+  <body class="bg-swiss-white text-swiss-black selection:bg-swiss-red selection:text-swiss-white">
+    <div class="swiss-noise"></div>
+    <noscript>ENABLE JAVASCRIPT.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

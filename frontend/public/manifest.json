@@ -1,0 +1,8 @@
+{
+  "short_name": "Paii",
+  "name": "Paii AI — Autonomous Payment Agent",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#1A3A5C",
+  "background_color": "#F8FAFC"
+}
