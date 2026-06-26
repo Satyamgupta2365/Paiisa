@@ -1,0 +1,65 @@
+# PAISA — Cloud Build Pipeline for Google Cloud Run
+# Track B: Enterprise Agent Engineering
+#
+# Usage:
+#   gcloud builds submit --config cloudbuild.yaml \
+#     --substitutions=_GOOGLE_API_KEY=your-key,_PINE_LABS_CLIENT_ID=your-id,_PINE_LABS_CLIENT_SECRET=your-secret
+
+steps:
+  # Step 1: Build the backend Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/paisa-backend:$SHORT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/paisa-backend:latest'
+      - './backend'
+
+  # Step 2: Push the image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/paisa-backend:$SHORT_SHA'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/paisa-backend:latest'
+
+  # Step 3: Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'paisa-backend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/paisa-backend:$SHORT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '1Gi'
+      - '--cpu'
+      - '2'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '3'
+      - '--set-env-vars'
+      - 'GOOGLE_API_KEY=${_GOOGLE_API_KEY},PINE_LABS_MERCHANT_ID=121562,PINE_LABS_CLIENT_ID=${_PINE_LABS_CLIENT_ID},PINE_LABS_CLIENT_SECRET=${_PINE_LABS_CLIENT_SECRET},NASIKO_ENABLED=true,ALLOWED_ORIGINS=*'
+
+substitutions:
+  _GOOGLE_API_KEY: ''
+  _PINE_LABS_CLIENT_ID: ''
+  _PINE_LABS_CLIENT_SECRET: ''
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+images:
+  - 'gcr.io/$PROJECT_ID/paisa-backend:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/paisa-backend:latest'
