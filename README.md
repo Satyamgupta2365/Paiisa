@@ -206,6 +206,14 @@ Intelligent payment method selection based on real-time balance analysis, credit
  
 <img src="./docs/assets/aligned.png" width="100%" alt="AI Aligned Checkout Screen" />
  
+<br/>
+ 
+### 3. Nasiko Control Plane — Registered Agents
+ 
+> The central agent registry hosted on the Nasiko control plane showing active ADK-managed specialist agents (paisa-cashflow, paisa-orchestrator, paisa-routing, paisa-tap) and their capability declarations.
+ 
+<img src="./docs/assets/nasiko_agents.png" width="100%" alt="Nasiko Registered Agents Endpoint" />
+ 
 ---
  
 ## 🏁 Getting Started
