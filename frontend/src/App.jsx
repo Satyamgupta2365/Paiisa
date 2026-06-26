@@ -9,6 +9,7 @@ import TravelPage from './pages/TravelPage';
 import AgentPage from './pages/AgentPage';
 import HistoryPage from './pages/HistoryPage';
 import LoginPage from './pages/LoginPage';
+import ItrPage from './pages/ItrPage';
 import DemoOne from './components/ui/demo';
 
 export default function App() {
@@ -49,6 +50,7 @@ export default function App() {
                   <Route path="/agent" element={<AgentPage />} />
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/history" element={<HistoryPage />} />
+                  <Route path="/tax" element={<ItrPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="*" element={
                     <div className="flex flex-col justify-center items-start h-[60vh] border-l-4 border-swiss-black pl-8 ml-8">

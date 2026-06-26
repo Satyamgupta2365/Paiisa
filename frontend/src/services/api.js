@@ -100,4 +100,17 @@ export const getStatementHistory = () =>
 export const getStatementById = (id) =>
   api.get(`/merchant/statement-history/${id}`);
 
+// ── ITR Tax Filing ─────────────────────────────────────────────────────────────
+export const getItrReport = (userId, otherIncome = 0, deductions80c = 150000, deductions80d = 25000, applyPresumptive = false) =>
+  api.get(`/itr/report/${userId}`, {
+    params: {
+      other_income: parseFloat(otherIncome),
+      deductions_80c: parseFloat(deductions80c),
+      deductions_80d: parseFloat(deductions80d),
+      apply_presumptive_44ad: applyPresumptive
+    }
+  });
+
+export const getTaxAdvisory = (summary) => api.post('/itr/advise', { summary });
+
 

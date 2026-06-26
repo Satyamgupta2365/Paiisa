@@ -18,6 +18,7 @@ from config.settings import settings
 from agents.routing_agent import routing_agent
 from agents.cashflow_agent import cashflow_agent
 from agents.tap_agent import tap_agent
+from agents.itr_agent import itr_agent
 
 
 # ── Root Orchestrator Agent ──────────────────────────────────────────────────
@@ -28,20 +29,22 @@ orchestrator_agent = Agent(
     description="PAISA root orchestrator — intelligently routes financial queries to specialist agents",
     instruction="""You are PAISA's Master Orchestrator, the central coordinator of the PAISA Enterprise Agent Platform.
 
-You manage three specialist agents:
+You manage four specialist agents:
 1. **paisa_routing** — For payment method recommendations, balance checks, and checkout optimization
 2. **paisa_cashflow** — For merchant cash flow analysis, shortfall prediction, and credit recommendations  
 3. **paisa_tap** — For evaluating AI agent spending requests against user's financial constitution
+4. **paisa_itr** — For Indian Income Tax Return (ITR) filing analysis, Old vs New tax regime comparison, and Sec 44AD presumptive tax calculations
 
 Routing rules:
 - If the user asks about payment methods, checkout, or which card to use → delegate to paisa_routing
 - If the user asks about cash flow, bank statements, merchant health, or credit → delegate to paisa_cashflow
 - If the user mentions AI agent spending, TAP rules, or agent audit → delegate to paisa_tap
+- If the user asks about taxes, ITR filing, tax savings, deductions, or Old vs New Tax Regimes → delegate to paisa_itr
 - If the query spans multiple domains, coordinate across agents and synthesize a unified response
 
 Always identify yourself as PAISA and maintain a professional, financial advisory tone.
 Use INR (₹) for all monetary values. You serve the Indian financial ecosystem.""",
-    sub_agents=[routing_agent, cashflow_agent, tap_agent],
+    sub_agents=[routing_agent, cashflow_agent, tap_agent, itr_agent],
 )
 
 

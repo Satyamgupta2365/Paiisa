@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database.db import init_db
 from config.settings import settings
-from routes import recommend, payment, offers, users, transactions, travel, tap, merchant, agents as agent_routes
+from routes import recommend, payment, offers, users, transactions, travel, tap, merchant, agents as agent_routes, itr
 
 app = FastAPI(
     title="PAISA — Enterprise Agent Platform",
@@ -45,6 +45,7 @@ app.include_router(merchant.router)     # Pillar 3 — Cash Flow Predictor
 
 # ── Enterprise Agent Engineering (Track B) ────────────────────────────────────
 app.include_router(agent_routes.router) # ADK Multi-Agent + Nasiko endpoints
+app.include_router(itr.router)
 
 
 @app.on_event("startup")

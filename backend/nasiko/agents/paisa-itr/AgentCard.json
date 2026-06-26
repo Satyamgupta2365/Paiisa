@@ -1,0 +1,25 @@
+{
+    "name": "paisa-itr",
+    "description": "Indian Income Tax Return (ITR) planner and presumptive tax calculator — analyzes MSME income and expenses to generate tax filing advice",
+    "version": "1.0.0",
+    "capabilities": [
+        "tax_calculation",
+        "itr_report",
+        "tax_optimization"
+    ],
+    "endpoints": {
+        "health": "/health",
+        "invoke": "/api/v1/itr/report"
+    },
+    "metadata": {
+        "framework": "google-adk",
+        "model": "gemini-2.0-flash",
+        "deployment": "cloud-run",
+        "tools": [
+            "calculate_tax_liability",
+            "get_tax_slabs_info"
+        ]
+    },
+    "author": "PAISA AI Systems",
+    "license": "MIT"
+}

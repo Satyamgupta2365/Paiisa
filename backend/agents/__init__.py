@@ -15,11 +15,13 @@ from agents.orchestrator import orchestrator_agent, create_runner
 from agents.routing_agent import routing_agent
 from agents.cashflow_agent import cashflow_agent
 from agents.tap_agent import tap_agent
+from agents.itr_agent import itr_agent
 
 __all__ = [
     "orchestrator_agent",
     "routing_agent",
     "cashflow_agent",
     "tap_agent",
+    "itr_agent",
     "create_runner",
 ]

@@ -262,7 +262,7 @@ def _register_default_agents():
         "version": "1.0.0",
         "capabilities": ["orchestration", "routing", "delegation"],
         "endpoints": {"health": "/health", "invoke": "/api/v1/agent/chat"},
-        "sub_agents": ["paisa-routing", "paisa-cashflow", "paisa-tap"],
+        "sub_agents": ["paisa-routing", "paisa-cashflow", "paisa-tap", "paisa-itr"],
         "metadata": {"framework": "google-adk", "model": "gemini-2.0-flash"}
     })
     
@@ -290,5 +290,14 @@ def _register_default_agents():
         "version": "1.0.0",
         "capabilities": ["spending_control", "rule_enforcement", "audit_trail"],
         "endpoints": {"health": "/health", "invoke": "/api/v1/tap/request"},
+        "metadata": {"framework": "google-adk", "model": "gemini-2.0-flash"}
+    })
+
+    nasiko.register_agent_from_dict({
+        "name": "paisa-itr",
+        "description": "Indian Income Tax Return (ITR) advisor and presumptive tax calculator",
+        "version": "1.0.0",
+        "capabilities": ["tax_calculation", "itr_report", "tax_optimization"],
+        "endpoints": {"health": "/health", "invoke": "/api/v1/itr/report"},
         "metadata": {"framework": "google-adk", "model": "gemini-2.0-flash"}
     })

@@ -22,6 +22,7 @@ export default function Navbar() {
           <Link to="/dashboard" className={`h-full flex items-center px-6 border-l-2 border-swiss-black ${isActive('/dashboard')}`}>MERCHANT</Link>
           <Link to="/travel" className={`h-full flex items-center px-6 border-l-2 border-swiss-black ${isActive('/travel')}`}>STMT AI</Link>
           <Link to="/agent" className={`h-full flex items-center px-6 border-l-2 border-swiss-black ${isActive('/agent')}`}>TAP SERVER</Link>
+          <Link to="/tax" className={`h-full flex items-center px-6 border-l-2 border-swiss-black ${isActive('/tax')}`}>ITR COMPLIANCE</Link>
           <Link to="/checkout" className={`h-full flex items-center px-6 border-l-2 border-swiss-black ${isActive('/checkout')}`}>CHECKOUT</Link>
           <Link to="/history" className={`h-full flex items-center px-6 border-l-2 border-swiss-black ${isActive('/history')}`}>AUDIT</Link>
         </div>
