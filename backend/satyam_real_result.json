@@ -1,0 +1,72 @@
+{
+    "company_name": "Satyam",
+    "period": "May 2026 \u2013 June 2026",
+    "summary": {
+        "total_credits": 64426.54,
+        "total_debits": 58391.35,
+        "net_cashflow": 6035.19,
+        "avg_monthly_balance": 8191.11,
+        "transaction_count": 89
+    },
+    "income_breakdown": [
+        {
+            "category": "Client Payments",
+            "amount": 43126.54,
+            "percentage": 66.95
+        },
+        {
+            "category": "Other Income",
+            "amount": 21300.0,
+            "percentage": 33.05
+        }
+    ],
+    "expense_breakdown": [
+        {
+            "category": "Operating Expenses",
+            "amount": 41711.35,
+            "percentage": 71.44
+        },
+        {
+            "category": "Payment to Vendors",
+            "amount": 10480.0,
+            "percentage": 17.98
+        },
+        {
+            "category": "Miscellaneous",
+            "amount": 6200.0,
+            "percentage": 10.58
+        }
+    ],
+    "monthly_trend": [
+        {
+            "month": "May 2026",
+            "credits": 23126.54,
+            "debits": 18311.35,
+            "net": 4815.19
+        },
+        {
+            "month": "June 2026",
+            "credits": 41300.0,
+            "debits": 40080.0,
+            "net": 1220.0
+        }
+    ],
+    "health_score": 68,
+    "health_label": "FAIR",
+    "working_capital": {
+        "current": 8191.11,
+        "required": 12000.0,
+        "gap": 3808.89,
+        "credit_recommended": 5000.0,
+        "emi_estimate": 625.0,
+        "tenure_months": 12
+    },
+    "ai_insights": [
+        "High operating expenses (71.44% of total expenses) indicate potential areas for cost optimization.",
+        "Irregular payment cycles from clients may impact cash flow; consider implementing a payment tracking system.",
+        "Large payments to vendors in June suggest a need for better cash flow management and potential renegotiation of payment terms.",
+        "Working capital gap of \u20b93808.89 is manageable; an NBFC credit line of \u20b95000.00 at 1.5%/month would cost \u20b9625.00 EMI/12 months."
+    ],
+    "credit_verdict": "ELIGIBLE",
+    "credit_verdict_reason": "Consistent income and manageable expenses qualify for PAISA NBFC credit up to \u20b95000.00."
+}
