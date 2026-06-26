@@ -1,0 +1,25 @@
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]
+asyncpg
+aiosqlite
+alembic
+pydantic
+pydantic-settings
+pydantic[email]
+httpx
+pytest
+pytest-asyncio
+python-dotenv
+python-multipart
+pdfplumber
+openpyxl
+xlrd
+# Google ADK + Gemini (Track B: Enterprise Agent Engineering)
+google-adk
+google-genai
+google-cloud-aiplatform
+# Legacy fallbacks (kept for graceful degradation)
+boto3
+botocore
+groq
