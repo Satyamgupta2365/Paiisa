@@ -1,0 +1,29 @@
+{
+    "name": "paisa-orchestrator",
+    "description": "PAISA root orchestrator — intelligently routes financial queries to specialist agents via Google ADK delegation",
+    "version": "1.0.0",
+    "capabilities": [
+        "orchestration",
+        "routing",
+        "delegation",
+        "multi_agent_coordination"
+    ],
+    "endpoints": {
+        "health": "/health",
+        "invoke": "/api/v1/agent/chat"
+    },
+    "sub_agents": [
+        "paisa-routing",
+        "paisa-cashflow",
+        "paisa-tap"
+    ],
+    "metadata": {
+        "framework": "google-adk",
+        "model": "gemini-2.0-flash",
+        "deployment": "cloud-run",
+        "platform": "PAISA Enterprise Agent Platform",
+        "track": "Track B: Enterprise Agent Engineering"
+    },
+    "author": "PAISA AI Systems",
+    "license": "MIT"
+}

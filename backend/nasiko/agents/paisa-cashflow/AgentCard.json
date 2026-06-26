@@ -1,0 +1,27 @@
+{
+    "name": "paisa-cashflow",
+    "description": "Merchant bank statement analyzer and cash flow predictor — analyzes MSMEs financial health using AI and predicts shortfalls",
+    "version": "1.0.0",
+    "capabilities": [
+        "cashflow_analysis",
+        "shortfall_prediction",
+        "credit_recommendation",
+        "expense_categorization"
+    ],
+    "endpoints": {
+        "health": "/health",
+        "invoke": "/api/v1/merchant/analyze-statement"
+    },
+    "metadata": {
+        "framework": "google-adk",
+        "model": "gemini-2.0-flash",
+        "deployment": "cloud-run",
+        "tools": [
+            "analyze_merchant_cashflow",
+            "predict_shortfall",
+            "get_expense_breakdown"
+        ]
+    },
+    "author": "PAISA AI Systems",
+    "license": "MIT"
+}
