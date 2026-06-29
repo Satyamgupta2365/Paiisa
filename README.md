@@ -3,7 +3,7 @@
 # 🪙 PAISA
 ### **Enterprise Multi-Agent Financial Orchestration & Intelligence Platform**
 
-*Orchestrated Agentic Workflows • Google Gemini 2.0 • Nasiko Control Plane • Secure Payment Routing*
+*Orchestrated Agentic Workflows • Google Gemini 2.0 • Nasiko Control Plane • Pine Labs Plural PG • Secure Payment Routing*
 
 <br/>
 
@@ -16,7 +16,7 @@
 
 <br/>
 
-**PAISA** is a production-grade multi-agent financial intelligence and orchestration platform. By leveraging the **RBI Account Aggregator (AA)** framework, **Google ADK + Gemini**, and the **Nasiko control plane**, PAISA delivers intelligent transaction routing, cashflow analytics, automated ITR compliance, and secure agentic spending governance.
+**PAISA** is a production-grade multi-agent financial intelligence and orchestration platform. By leveraging the **RBI Account Aggregator (AA)** framework, the **Pine Labs Plural Payment Gateway**, **Google ADK + Gemini**, and the **Nasiko control plane**, PAISA delivers intelligent transaction routing, cashflow analytics, automated ITR compliance, and secure agentic spending governance.
 
 [Explore Docs](#) • [View API Reference](#-api-reference) • [Request Demo](#)
 
@@ -29,6 +29,7 @@
 - [The Financial Challenge & PAISA Solution](#-the-financial-challenge--paisa-solution)
 - [System Architecture](#-system-architecture)
 - [Key Product Pillars](#-key-product-pillars)
+- [Pine Labs Plural Integration](#-pine-labs-plural-integration)
 - [Agentic Roles & Capabilities](#-agentic-roles--capabilities)
 - [Technology Stack](#-technology-stack)
 - [Platform Showcase](#-platform-showcase)
@@ -134,6 +135,21 @@ Integrates with the **RBI Account Aggregator** flow using temporary session toke
 </td>
 </tr>
 </table>
+
+---
+
+## 💳 Pine Labs Plural Integration
+
+PAISA integrates directly with the **Pine Labs Plural Online Payment Gateway** (using the Plural UAT sandbox) to enable secure, context-aware payment execution and merchant services.
+
+### Core Payment Flows:
+1. **OAuth 2.0 Authentication:** Authenticates against the Pine Labs identity service using client credentials to dynamically generate bearer tokens for all secure API calls.
+2. **Order Initiation (`initiate_payment`):** Generates structured transaction payloads containing merchant data, payment details (in INR), and billing details. These are posted to `/api/pay/v1/orders` to retrieve active session tokens.
+3. **Real-time Status Tracking (`get_transaction_status`):** Monitors transaction states (`CHARGED`, `SUCCESS`, `PENDING`) by querying `/api/pay/v1/orders/{plural_order_id}`.
+4. **Merchant Refunds (`refund`):** Initiates automated transaction refunds by posting payloads directly to the Pine Labs `/api/pay/v1/refunds` endpoint.
+
+### Affordability Engine Integration
+The platform links to the **Pine Labs Affordability Suite** to recommend optimized credit schemes (such as 0% interest EMIs) on the checkout UI when the Gemini agent detects large transactions or potential cashflow shortfalls.
 
 ---
 
