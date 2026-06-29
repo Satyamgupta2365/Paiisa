@@ -151,17 +151,28 @@ PAISA relies on five specialized AI agents, each structured with dedicated tools
 
 ---
 
-## 🛠️ Technology Stack
+## 🛠️ Technology Stack & Integrations
 
-```
-Frontend Stack             Backend Stack             AI & Infrastructure
-┌──────────────────────┐   ┌─────────────────────┐   ┌───────────────────────────┐
-│ • React 18 / JSX     │   │ • Python 3.12       │   │ • Google ADK              │
-│ • Tailwind CSS       │   │ • FastAPI / Uvicorn │   │ • Gemini 2.0 (Vertex AI)  │
-│ • Lucide UI Icons    │   │ • PostgreSQL        │   │ • Nasiko Control Plane    │
-│ • Recharts (Graphs)  │   │ • SQLAlchemy 2.0    │   │ • Google Cloud Run        │
-└──────────────────────┘   └─────────────────────┘   └───────────────────────────┘
-```
+### Core Technology Stack
+
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **AI Orchestration** | **Google ADK** (Agent Development Kit) | Decentralized agent runtime and capability definition |
+| **Cognitive Engine** | **Google Gemini 2.0 Flash** (Vertex AI) | Real-time reasoning, classification, and agentic decision making |
+| **Control Plane** | **Nasiko** | Low-latency message routing, schema checking, and agent lifecycle monitoring |
+| **Backend Core** | **Python 3.12 / FastAPI** | Async high-concurrency API gateway and service layer |
+| **Payment Platform** | **Pine Labs Plural API** | Production-ready payment processing core (`initiate_payment`, `refund`, `get_transaction_status`) |
+| **Database & ORM** | **PostgreSQL** / **SQLAlchemy 2.0** | ACID-compliant transaction logging and financial configuration storage |
+| **Frontend UI** | **React 18 / Tailwind CSS** | Premium dashboard interface with live graph visualization |
+| **Cloud Hosting** | **Google Cloud Run** | Serverless microservice containers |
+| **CI/CD Automation** | **Google Cloud Build** | Automated secure container compilation and deployment pipeline |
+
+### Key API Integrations
+
+* **Pine Labs Plural Online Payment Service:** Processes checkout requests, coordinates merchant payment flows, handles card/netbanking authentication, and feeds transaction status data directly into the database.
+* **Pine Labs Affordability Suite:** Powering the intelligent payment recommendation engine, suggesting customized 0% interest EMI options for HDFC/card users during larger expense checks.
+* **RBI Account Aggregator (AA):** Secure, consent-driven connection simulating bank telemetry fetch to verify balances and cashflows.
+* **Pine Labs Digital Turnover Logs:** Integrated with the **ITR Compliance Agent** to calculate digital turnovers and verify presumptive tax eligibility under Section 44AD of the Income Tax Act.
 
 ---
 
@@ -229,6 +240,12 @@ cd paisa
 
    # Nasiko Control Plane
    NASIKO_ENABLED=true
+
+   # Pine Labs Plural API Credentials
+   PINE_LABS_BASE_URL=https://api.pluralonline.com
+   PINE_LABS_MERCHANT_ID=121562
+   PINE_LABS_CLIENT_ID=your_client_id_here
+   PINE_LABS_CLIENT_SECRET=your_client_secret_here
    ```
 4. Start the FastAPI development server:
    ```bash
