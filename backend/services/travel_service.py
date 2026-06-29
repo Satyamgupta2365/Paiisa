@@ -2,7 +2,7 @@
 Travel Guardian Service
 Simulates a 48-hour pre-departure scan of a traveller's financial instruments.
 In production this would call card issuer APIs via RBI AA Framework (Setu SDK).
-For the hackathon demo, uses rich mock data that demonstrates the full scenario.
+For simulation and local development, uses rich mock data that demonstrates the full scenario.
 """
 from models.schemas import TravelIssue, TravelScanResponse
 

@@ -1,5 +1,5 @@
 # PAISA — Enterprise Agent Platform
-# Track B: Enterprise Agent Engineering | Agent Arena Bangalore 2026
+# Developer Configuration Guide & Best Practices
 
 ## Project Overview
 PAISA is a multi-agent payment orchestration platform built on Google ADK that leverages the RBI Account Aggregator framework to intelligently route payments through a coordinated network of specialist AI agents.

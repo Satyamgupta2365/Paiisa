@@ -1,7 +1,7 @@
 """
 Cash Flow Predictor Service (ARIMA+LSTM Simulation)
 Runs on the merchant's rolling UPI transaction history.
-For the hackathon demo, uses a simplified linear extrapolation to demonstrate
+For local development and simulation, uses a simplified linear extrapolation to demonstrate
 the ARIMA+LSTM concept. Production would use statsmodels + Keras on AWS SageMaker.
 
 Formula:
